@@ -63,7 +63,7 @@ const breakableViewChild = (children, height, path = '', currentChildren) => {
     if (
       shouldNodeBreak(
         children[i],
-        children.slice(i + 1, height),
+        children.slice(i + 1),
         height,
         currentChildren,
       )
