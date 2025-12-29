@@ -152,6 +152,20 @@ const splitNodes = (height: number, contentArea: number, nodes: SafeNode[]) => {
       }
     }
 
+    // Element fits on a full page but not in remaining space and cannot wrap - move to next page
+    if (fitsInsidePage && shouldSplit && !canWrap) {
+      const box = Object.assign({}, child.box, { top: child.box.top - height });
+      const props = Object.assign({}, child.props, {
+        wrap: true,
+        break: false,
+      });
+      const next = Object.assign({}, child, { box, props });
+
+      currentChildren.push(...futureFixedNodes);
+      nextChildren.push(next, ...futureNodes);
+      break;
+    }
+
     if (shouldBreak) {
       const box = Object.assign({}, child.box, { top: child.box.top - height });
       const props = Object.assign({}, child.props, {

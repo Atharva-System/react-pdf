@@ -6,6 +6,9 @@ export const NON_WRAP_TYPES = [P.Svg, P.Note, P.Image, P.Canvas];
 export const canCauseBlankSpace = (node, prevNode, currentChildren) => {
   if (!('preventBlankSpace' in node.props)) return false;
 
+  // Don't override explicit wrap: false - respect user's intent to move to next page
+  if ('wrap' in node.props && node.props.wrap === false) return false;
+
   const prevNodeHasHeightOne = prevNode?.box?.height === 1;
   const childrenIsEmpty = currentChildren?.length === 0;
 
@@ -30,6 +33,9 @@ const getWrap = (
   if (NON_WRAP_TYPES.includes(node.type)) return false;
 
   if (!node.props) return true;
+
+  // Check wrap prop first - if explicitly set to false, respect that
+  if ('wrap' in node.props && node.props.wrap === false) return false;
 
   if (canCauseBlankSpace(node, prevNode, currentChildren)) return true;
 
