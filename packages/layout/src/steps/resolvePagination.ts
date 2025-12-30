@@ -63,7 +63,7 @@ const breakableViewChild = (children, height, path = '', currentChildren) => {
     if (
       shouldNodeBreak(
         children[i],
-        children.slice(i + 1, height),
+        children.slice(i + 1),
         height,
         currentChildren,
       )
@@ -136,7 +136,8 @@ const splitNodes = (height: number, contentArea: number, nodes: SafeNode[]) => {
         warnUnavailableSpace(child);
         break;
       } else {
-        // We don't want to break non wrapable nodes, so we just let them be.
+        // Element is larger than a page and has wrap=false
+        // Move to next page and enable wrapping so it can flow across pages
         const box = Object.assign({}, child.box, {
           top: child.box.top - height,
         });
@@ -150,6 +151,21 @@ const splitNodes = (height: number, contentArea: number, nodes: SafeNode[]) => {
         nextChildren.push(next, ...futureNodes);
         break;
       }
+    }
+
+    // Element fits on a full page but not in remaining space - move to next page
+    // This keeps sections together when they can fit on a fresh page
+    if (fitsInsidePage && shouldSplit && !canWrap) {
+      const box = Object.assign({}, child.box, { top: child.box.top - height });
+      const props = Object.assign({}, child.props, {
+        wrap: true,
+        break: false,
+      });
+      const next = Object.assign({}, child, { box, props });
+
+      currentChildren.push(...futureFixedNodes);
+      nextChildren.push(next, ...futureNodes);
+      break;
     }
 
     if (shouldBreak) {

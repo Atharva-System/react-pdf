@@ -31,6 +31,10 @@ const getWrap = (
 
   if (!node.props) return true;
 
+  // Check wrap prop first - if explicitly set to false, respect that
+  // This allows elements to move to the next page instead of splitting
+  if ('wrap' in node.props && node.props.wrap === false) return false;
+
   if (canCauseBlankSpace(node, prevNode, currentChildren)) return true;
 
   return 'wrap' in node.props ? node.props.wrap : true;
