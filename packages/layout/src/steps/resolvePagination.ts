@@ -166,6 +166,25 @@ const splitNodes = (height: number, contentArea: number, nodes: SafeNode[]) => {
       break;
     }
 
+    // Element fits on a full page but not in remaining space - move to next page to keep together
+    // This handles the case where wrap is true (default) but we still want to avoid splitting
+    // if the element would fit entirely on the next page
+    const remainingSpace = height - nodeTop;
+    const wouldBarelyFitOnCurrentPage = remainingSpace < nodeHeight * 0.3; // Less than 30% fits
+    if (
+      fitsInsidePage &&
+      shouldSplit &&
+      wouldBarelyFitOnCurrentPage &&
+      currentChildren.length > 0
+    ) {
+      const box = Object.assign({}, child.box, { top: child.box.top - height });
+      const next = Object.assign({}, child, { box });
+
+      currentChildren.push(...futureFixedNodes);
+      nextChildren.push(next, ...futureNodes);
+      break;
+    }
+
     if (shouldBreak) {
       const box = Object.assign({}, child.box, { top: child.box.top - height });
       const props = Object.assign({}, child.props, {
@@ -182,21 +201,23 @@ const splitNodes = (height: number, contentArea: number, nodes: SafeNode[]) => {
     if (shouldSplit || firstBreakableViewChild) {
       const [currentChild, nextChild] = split(child, height, contentArea);
 
-      // All children are moved to the next page, it doesn't make sense to show the parent on the current page
-      if (child.children.length > 0 && currentChild.children.length === 0) {
-        // But if the current page is empty then we can just include the parent on the current page
-        // if (currentChildren.length === 0) {
-        //   currentChildren.push(child, ...futureFixedNodes);
-        //   nextChildren.push(...futureNodes);
-        // } else {
-        const box = Object.assign({}, nextChild.box, {
-          top: nextChild.box.top - height,
+      // Check if all non-fixed children are moved to the next page
+      const currentNonFixedChildren = currentChild.children
+        ? currentChild.children.filter((c) => !isFixed(c))
+        : [];
+      const hasNonFixedChildren = child.children
+        ? child.children.filter((c) => !isFixed(c)).length > 0
+        : false;
+
+      // All meaningful children are moved to the next page, move the parent too
+      if (hasNonFixedChildren && currentNonFixedChildren.length === 0) {
+        const box = Object.assign({}, child.box, {
+          top: child.box.top - height,
         });
-        const next = Object.assign({}, nextChild, { box });
+        const next = Object.assign({}, child, { box });
 
         currentChildren.push(...futureFixedNodes);
         nextChildren.push(next, ...futureNodes);
-        // }
         break;
       }
 
